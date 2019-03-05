@@ -9,15 +9,20 @@ namespace ta {
 
 imp_array::imp_array(const std::string & in_str)
 {
+    init(in_str);
+}
+
+void imp_array::init(const std::string & in_str)
+{
     auto strsize = in_str.size();
     implicants.reserve(strsize);
 
     if (!is_power_of_2(strsize)) {
-        throw std::runtime_error("input data is incorrect");
+        throw std::runtime_error("incorrect input data");
     }
 
     // Узнает степень двойки
-    order = count_bits(strsize - 1);
+    func_order = func_order_original = count_bits(strsize - 1);
 
     unsigned count = 0;
     for (char c : in_str) {
@@ -38,28 +43,32 @@ std::vector<implicant> imp_array::minimize()
 {
     initial_implicants = implicants;
 
-    while (order > 0) {
+    while (func_order > 0) {
         iterate();
     }
 
-    exclude();
-    
-    std::vector<implicant> refugees_vec(refugees.size());
+    refugees_vec.resize(refugees.size());
     std::transform(
         refugees.begin(),
         refugees.end(),
         refugees_vec.begin(),
-        [] (const implicant& imp) -> implicant {
-            return imp;
-        });
+        [](const implicant& imp) -> implicant {
+        return imp;
+    });
 
+    exclude();
     return refugees_vec;
+}
+
+int imp_array::order() const
+{
+    return func_order_original;
 }
 
 void imp_array::iterate()
 {
     if (implicants.empty()) {
-        order--;
+        func_order--;
         return;
     }
 
@@ -96,29 +105,15 @@ void imp_array::iterate()
             return imp;
         });
 
-    order--;
+    func_order--;
 }
 
 void imp_array::exclude()
 {
-    std::vector<uint32_t> impvals(initial_implicants.size());
-    std::vector<uint32_t> deadvals(implicants.size());
-
-    std::transform(
-        initial_implicants.begin(),
-        initial_implicants.end(),
-        impvals.begin(),
-        [] (const implicant& imp) -> uint32_t { return imp.value(); });
-
-    std::transform(
-        implicants.begin(),
-        implicants.end(),
-        deadvals.begin(),
-        [] (const implicant& imp) -> uint32_t { return imp.value(); });
-
-    mintable original(impvals, deadvals);
+    mintable original(initial_implicants, refugees_vec);
     minimize_ftor minimize(original);
     mintable minimized = minimize();
+    refugees_vec = minimized.get_deads();
 }
 
 }

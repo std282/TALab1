@@ -12,7 +12,9 @@ public:
     imp_array() = default;
     imp_array(const std::string& in_str);
 
+    void init(const std::string& in_str);
     std::vector<implicant> minimize();
+    int order() const;
     
 private:
     void iterate();
@@ -21,7 +23,9 @@ private:
     std::vector<implicant> initial_implicants;
     std::vector<implicant> implicants;
     std::set<implicant>    refugees;
-    int order;
+    std::vector<implicant> refugees_vec;
+    int                    func_order;
+    int                    func_order_original;
 };
 
 }

@@ -29,6 +29,7 @@ public:
         return !(*this == imp);
     }
 
+    // for std::set
     bool operator<(const implicant& imp) const;
 
 

@@ -5,8 +5,8 @@
 namespace ta {
 
 void mintable::init(
-    const std::vector<uint32_t>& imps,
-    const std::vector<uint32_t>& deads)
+    const std::vector<implicant>& imps,
+    const std::vector<implicant>& deads)
 {
     implicants = imps;
     dead_ends  = deads;
@@ -18,7 +18,9 @@ void mintable::init(
 
     for (size_t i = 0; i < deads.size(); i++)
     for (size_t j = 0; j < imps.size();  j++) {
-        if (deads[i] & imps[j] == deads[i]) {
+        auto xor_imps   = deads[i].value() ^ imps[j].value();
+        auto patch_mask = ~deads[i].patch_value();
+        if ((xor_imps & patch_mask) == 0) {
             presence_table[i][j] = true;
         }
     }
@@ -47,12 +49,17 @@ int mintable::rows() const
 
 void mintable::remove_row(int pos)
 {
-    if (pos >= dead_ends.size()) {
+    if (static_cast<size_t>(pos) >= dead_ends.size()) {
         throw std::out_of_range("table row position is out of range");
     }
 
     dead_ends.erase(dead_ends.begin() + pos);
     presence_table.erase(presence_table.begin() + pos);
+}
+
+std::vector<implicant> mintable::get_deads() const
+{
+	return dead_ends;
 }
 
 mintable minimize_ftor::operator()()

@@ -2,6 +2,8 @@
 
 #include <vector>
 
+#include "implicant.h"
+
 namespace ta {
 
 class mintable {
@@ -10,26 +12,28 @@ public:
     mintable(const mintable&)            = default;
     mintable& operator=(const mintable&) = default;
 
-    inline mintable(const std::vector<uint32_t>& imps,
-                    const std::vector<uint32_t>& deads)
+    inline mintable(const std::vector<implicant>& imps,
+                    const std::vector<implicant>& deads)
     {
         init(imps, deads);
     }
 
-    void init(const std::vector<uint32_t>& imps,
-              const std::vector<uint32_t>& deads);
+    void init(const std::vector<implicant>& imps,
+              const std::vector<implicant>& deads);
 
     std::vector<bool> compute_disjunction() const;
     int rows() const;
     void remove_row(int pos);
 
+	std::vector<implicant> get_deads() const;
+
 private:
     template <typename T>
     using matrix_2d = std::vector<std::vector<T>>;
 
-    std::vector<uint32_t> implicants;
-    std::vector<uint32_t> dead_ends;
-    matrix_2d<bool>       presence_table;
+    std::vector<implicant> implicants;
+    std::vector<implicant> dead_ends;
+    matrix_2d<bool>        presence_table;
 };
 
 class minimize_ftor {
