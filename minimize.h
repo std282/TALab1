@@ -4,18 +4,49 @@
 
 namespace ta {
 
-class presentation_table {
+class mintable {
 public:
-    presentation_table();
-    presentation_table(size_t size);
+    mintable()                           = default;
+    mintable(const mintable&)            = default;
+    mintable& operator=(const mintable&) = default;
 
-    void resize(size_t size);
-    void set_present(int i);
-    void disjunct_with(const presentation_table& table);
-    bool is_equal_to(const presentation_table& table);
+    inline mintable(const std::vector<uint32_t>& imps,
+                    const std::vector<uint32_t>& deads)
+    {
+        init(imps, deads);
+    }
+
+    void init(const std::vector<uint32_t>& imps,
+              const std::vector<uint32_t>& deads);
+
+    std::vector<bool> compute_disjunction() const;
+    int rows() const;
+    void remove_row(int pos);
 
 private:
-    std::vector<bool> is_present;
+    template <typename T>
+    using matrix_2d = std::vector<std::vector<T>>;
+
+    std::vector<uint32_t> implicants;
+    std::vector<uint32_t> dead_ends;
+    matrix_2d<bool>       presence_table;
+};
+
+class minimize_ftor {
+public:
+    inline minimize_ftor(const mintable& table)
+    {
+        minimized_table = original_table = table;
+    }
+
+    mintable operator()();
+
+private:
+    void actual_minimizer(const mintable& table);
+
+    mintable original_table;
+    mintable minimized_table;
+    std::vector<bool> original_disjunction;
 };
 
 }

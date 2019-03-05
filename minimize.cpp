@@ -4,44 +4,80 @@
 
 namespace ta {
 
-presentation_table::presentation_table()
+void mintable::init(
+    const std::vector<uint32_t>& imps,
+    const std::vector<uint32_t>& deads)
 {
-    // default constructor
+    implicants = imps;
+    dead_ends  = deads;
+
+    presence_table.resize(deads.size());
+    for (auto& row : presence_table) {
+        row.resize(imps.size(), false);
+    }
+
+    for (size_t i = 0; i < deads.size(); i++)
+    for (size_t j = 0; j < imps.size();  j++) {
+        if (deads[i] & imps[j] == deads[i]) {
+            presence_table[i][j] = true;
+        }
+    }
 }
 
-presentation_table::presentation_table(size_t size) :
-    is_present(size, false)
+std::vector<bool> mintable::compute_disjunction() const
 {
+    std::vector<bool> disj(implicants.size(), false);
+    
+    for (const auto& row : presence_table) {
+        std::transform(
+            row.begin(),  // вход 1
+            row.end(),    // вход 1 (конец)
+            disj.begin(), // вход 2 
+            disj.begin(), // выход
+            [] (bool a, bool b) { return a || b; });
+    }
+
+    return disj;
 }
 
-void presentation_table::resize(size_t size)
+int mintable::rows() const
 {
-    this->is_present.resize(size, false);
+    return dead_ends.size();
 }
 
-void presentation_table::set_present(int i)
+void mintable::remove_row(int pos)
 {
-    this->is_present[i] = true;
+    if (pos >= dead_ends.size()) {
+        throw std::out_of_range("table row position is out of range");
+    }
+
+    dead_ends.erase(dead_ends.begin() + pos);
+    presence_table.erase(presence_table.begin() + pos);
 }
 
-void presentation_table::disjunct_with(const presentation_table& table)
+mintable minimize_ftor::operator()()
 {
-    std::transform(
-        this->is_present.begin(), // вход 1
-        this->is_present.end(),   // вход 1 (конец)
-        table.is_present.begin(), // вход 2
-        this->is_present.begin(), // выход
-        [] (bool x, bool y) { return x || y; }
-    );
+    original_disjunction = original_table.compute_disjunction();
+    actual_minimizer(original_table);
+    
+    return minimized_table;
 }
 
-bool presentation_table::is_equal_to(const presentation_table& table)
+void minimize_ftor::actual_minimizer(const mintable& table)
 {
-    return std::equal(
-        this->is_present.begin(),
-        this->is_present.end(),
-        table.is_present.begin()
-    );
+    for (int i = 0; i < table.rows(); i++) {
+        auto new_table = table;
+        new_table.remove_row(i);
+        auto new_disj = new_table.compute_disjunction();
+
+        if (new_disj == original_disjunction) {
+            if (new_table.rows() < minimized_table.rows()) {
+                minimized_table = new_table;
+            }
+
+            actual_minimizer(new_table);
+        }
+    }
 }
 
-} // ta
+}

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 
+#include "minimize.h"
 #include "pow2.h"
 
 namespace ta {
@@ -100,13 +101,24 @@ void imp_array::iterate()
 
 void imp_array::exclude()
 {
-    std::vector<std::vector<bool>> containment_table;
-    containment_table.resize(implicants.size());
-    for (auto& imp : containment_table) {
-        imp.resize(initial_implicants.size());
-    }
+    std::vector<uint32_t> impvals(initial_implicants.size());
+    std::vector<uint32_t> deadvals(implicants.size());
 
-    
+    std::transform(
+        initial_implicants.begin(),
+        initial_implicants.end(),
+        impvals.begin(),
+        [] (const implicant& imp) -> uint32_t { return imp.value(); });
+
+    std::transform(
+        implicants.begin(),
+        implicants.end(),
+        deadvals.begin(),
+        [] (const implicant& imp) -> uint32_t { return imp.value(); });
+
+    mintable original(impvals, deadvals);
+    minimize_ftor minimize(original);
+    mintable minimized = minimize();
 }
 
 }
